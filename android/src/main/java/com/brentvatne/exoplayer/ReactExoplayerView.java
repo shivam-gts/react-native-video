@@ -152,6 +152,9 @@ class ReactExoplayerView extends FrameLayout implements
     private ExoPlayer player;
     private DefaultTrackSelector trackSelector;
     private boolean playerNeedsSource;
+    private boolean cache = false;
+    private int maxCacheSize = 100;
+    private int maxCacheFileSize = 10;
 
     private int resumeWindow;
     private long resumePosition;
@@ -178,7 +181,7 @@ class ReactExoplayerView extends FrameLayout implements
     private double maxHeapAllocationPercent = ReactExoplayerView.DEFAULT_MAX_HEAP_ALLOCATION_PERCENT;
     private double minBackBufferMemoryReservePercent = ReactExoplayerView.DEFAULT_MIN_BACK_BUFFER_MEMORY_RESERVE;
     private double minBufferMemoryReservePercent = ReactExoplayerView.DEFAULT_MIN_BUFFER_MEMORY_RESERVE;
-    private Handler mainHandler;
+//     private Handler mainHandler;
 
     // Props from React
     private int backBufferDurationMs = DefaultLoadControl.DEFAULT_BACK_BUFFER_DURATION_MS;
@@ -284,7 +287,8 @@ class ReactExoplayerView extends FrameLayout implements
 
     private void createViews() {
         clearResumePosition();
-        mediaDataSourceFactory = buildDataSourceFactory(true);
+      //   mediaDataSourceFactory = buildDataSourceFactory(true);
+        setMediaDataSourceFactory();
         if (CookieHandler.getDefault() != DEFAULT_COOKIE_MANAGER) {
             CookieHandler.setDefault(DEFAULT_COOKIE_MANAGER);
         }
@@ -299,7 +303,7 @@ class ReactExoplayerView extends FrameLayout implements
 
         exoPlayerView.setFocusable(this.focusable);
 
-        mainHandler = new Handler();
+      //   mainHandler = new Handler();
     }
 
     @Override
@@ -742,7 +746,7 @@ class ReactExoplayerView extends FrameLayout implements
         }
         try {
             HttpMediaDrmCallback drmCallback = new HttpMediaDrmCallback(licenseUrl,
-                    buildHttpDataSourceFactory(false));
+                    buildHttpDataSourceFactory());
             if (keyRequestPropertiesArray != null) {
                 for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
                     drmCallback.setKeyRequestProperty(keyRequestPropertiesArray[i], keyRequestPropertiesArray[i + 1]);
@@ -987,6 +991,19 @@ class ReactExoplayerView extends FrameLayout implements
         resumePosition = C.TIME_UNSET;
     }
 
+      /**
+     * Creates a CacheDataSource factory if cache is enabled
+     * else creates a simple DataSource factory
+     */
+    private void setMediaDataSourceFactory() {
+        if (cache) {
+            mediaDataSourceFactory = new CacheDataSourceFactory(this.themedReactContext, 
+                        maxCacheSize, maxCacheFileSize, bandwidthMeter, this.requestHeaders);
+        } else {
+            mediaDataSourceFactory = buildDataSourceFactory(true);
+        }
+    }
+
     /**
      * Returns a new DataSource factory.
      *
@@ -1002,14 +1019,16 @@ class ReactExoplayerView extends FrameLayout implements
     /**
      * Returns a new HttpDataSource factory.
      *
-     * @param useBandwidthMeter Whether to set {@link #bandwidthMeter} as a listener to the new
-     *     DataSource factory.
+//      * @param useBandwidthMeter Whether to set {@link #bandwidthMeter} as a listener to the new
+//      *     DataSource factory.
      * @return A new HttpDataSource factory.
      */
-    private HttpDataSource.Factory buildHttpDataSourceFactory(boolean useBandwidthMeter) {
-        return DataSourceUtil.getDefaultHttpDataSourceFactory(this.themedReactContext, useBandwidthMeter ? bandwidthMeter : null, requestHeaders);
+//     private HttpDataSource.Factory buildHttpDataSourceFactory(boolean useBandwidthMeter) {
+//         return DataSourceUtil.getDefaultHttpDataSourceFactory(this.themedReactContext, useBandwidthMeter ? bandwidthMeter : null, requestHeaders);
+//     }
+    private HttpDataSource.Factory buildHttpDataSourceFactory() {
+        return DataSourceUtil.getDefaultHttpDataSourceFactory(this.themedReactContext, null, requestHeaders);
     }
-
 
     // AudioManager.OnAudioFocusChangeListener implementation
 
@@ -1493,9 +1512,10 @@ class ReactExoplayerView extends FrameLayout implements
             this.endTimeMs = endTimeMs;
             this.extension = extension;
             this.requestHeaders = headers;
-            this.mediaDataSourceFactory =
-                    DataSourceUtil.getDefaultDataSourceFactory(this.themedReactContext, bandwidthMeter,
-                            this.requestHeaders);
+            // this.mediaDataSourceFactory =
+            //         DataSourceUtil.getDefaultDataSourceFactory(this.themedReactContext, bandwidthMeter,
+            //                 this.requestHeaders);
+            setMediaDataSourceFactory();
 
             if (!isSourceEqual) {
                 reloadSource();
@@ -1534,7 +1554,8 @@ class ReactExoplayerView extends FrameLayout implements
             boolean isSourceEqual = uri.equals(srcUri);
             this.srcUri = uri;
             this.extension = extension;
-            this.mediaDataSourceFactory = buildDataSourceFactory(true);
+            // this.mediaDataSourceFactory = buildDataSourceFactory(true);
+            setMediaDataSourceFactory();
 
             if (!isSourceEqual) {
                 reloadSource();
@@ -1559,6 +1580,18 @@ class ReactExoplayerView extends FrameLayout implements
     private void applyModifiers() {
         setRepeatModifier(repeat);
         setMutedModifier(muted);
+    }
+    
+        public void setCache(boolean cache) {
+        this.cache = cache;
+    }
+
+    public void setMaxCacheSize(int maxCacheSize) {
+        this.maxCacheSize = maxCacheSize;
+    }
+
+    public void setMaxCacheFileSize(int maxCacheFileSize) {
+        this.maxCacheFileSize = maxCacheFileSize;
     }
 
     public void setRepeatModifier(boolean repeat) {

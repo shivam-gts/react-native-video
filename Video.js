@@ -345,6 +345,9 @@ export default class Video extends Component {
         startTime: source.startTime || 0,
         endTime: source.endTime
       },
+      cache: nativeProps.cache,
+      maxCacheSize: nativeProps.maxCacheSize,
+      maxCacheFileSize: nativeProps.maxCacheFileSize,
       onVideoLoadStart: this._onLoadStart,
       onVideoPlaybackStateChanged: this._onPlaybackStateChanged,
       onVideoLoad: this._onLoad,
@@ -447,6 +450,9 @@ Video.propTypes = {
     // Opaque type returned by require('./video.mp4')
     PropTypes.number,
   ]),
+  cache: PropTypes.bool,
+  maxCacheSize: PropTypes.number,
+  maxCacheFileSize: PropTypes.number,
   drm: PropTypes.shape({
     type: PropTypes.oneOf([
       DRMType.CLEARKEY, DRMType.FAIRPLAY, DRMType.WIDEVINE, DRMType.PLAYREADY,
